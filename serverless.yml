@@ -1,0 +1,85 @@
+org: thermanowicz
+app: s3-sync-poc
+service: s3-sync-poc
+frameworkVersion: '3'
+
+
+provider:
+  name: aws
+  region: eu-central-1
+  runtime: python3.9
+  profile: default
+  tracing:
+    lambda: true
+
+
+constructs:
+  hosts:
+    type: queue
+    worker:
+      handler: hosts.producer
+      environment:
+        QUEUE_URL: ${construct:files.queueUrl}
+        BOTO_LIMIT: 100
+      timeout: 180
+      memorySize: 256
+      description: Function to pull list of files from external bucket (limit 200)
+      tracing: Active
+  files:
+    type: queue
+    worker:
+      handler: files_in.consumer
+      environment:
+        QUEUE_URL: ${construct:files.queueUrl}
+      timeout: 60
+      memorySize: 128
+      vpc:
+        securityGroupIds:
+          - sg-0a13a59f4a350e705
+        subnetIds:
+          - subnet-02247b9ecf4e118fd
+      fileSystemConfig:
+        arn: arn:aws:elasticfilesystem:eu-central-1:901978288702:access-point/fsap-048f4157f6a2d5ea9
+        localMountPath: /mnt/ingest
+      description: Function to pull file to local EFS
+      tracing: Active
+
+
+functions:
+  trigger_in:
+    handler: trigger.producer
+    events:
+      - schedule: rate(1 minute)
+    environment:
+      DEMO: true
+      QUEUE_URL: ${construct:hosts.queueUrl}
+    timeout: 30
+    memorySize: 128
+    description: Function to check in db host to sync
+    tracing: Active
+  trigger_out:
+    handler: files_out.producer
+    events:
+      - schedule: rate(1 minute)
+    timeout: 360
+    memorySize: 512
+    vpc:
+      securityGroupIds:
+        - sg-0a13a59f4a350e705
+      subnetIds:
+        - subnet-02247b9ecf4e118fd
+    fileSystemConfig:
+      arn: arn:aws:elasticfilesystem:eu-central-1:901978288702:access-point/fsap-048f4157f6a2d5ea9
+      localMountPath: /mnt/ingest
+    description: Function to push file to remote S3 from efs.
+    tracing: Active
+
+
+plugins:
+  - serverless-lift
+  - serverless-python-requirements
+
+
+package:
+  patterns:
+    - '!node_modules/**'
