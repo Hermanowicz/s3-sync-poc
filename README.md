@@ -1,5 +1,5 @@
 
-## Api keys are already in active, so don't bother 😎
+## Api keys are already down, so don't bother 😎
 
 
 This template demonstrates how to develop and deploy a simple SQS-based producer-consumer service running on AWS Lambda using the Serverless Framework and the [Lift](https://github.com/getlift/lift) plugin. It allows to accept messages, for which computation might be time or resource intensive, and offload their processing to an asynchronous background process for a faster and more resilient system.
