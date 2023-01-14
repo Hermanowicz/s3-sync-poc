@@ -22,7 +22,7 @@ constructs:
         QUEUE_URL: ${construct:files.queueUrl}
         BOTO_LIMIT: 100
       timeout: 180
-      memorySize: 256
+      memorySize: 512
       description: Function to pull list of files from external bucket (limit 200)
       tracing: Active
   files:
@@ -31,8 +31,8 @@ constructs:
       handler: files_in.consumer
       environment:
         QUEUE_URL: ${construct:files.queueUrl}
-      timeout: 60
-      memorySize: 128
+      timeout: 180
+      memorySize: 1536
       vpc:
         securityGroupIds:
           - sg-0a13a59f4a350e705
@@ -53,25 +53,9 @@ functions:
     environment:
       DEMO: true
       QUEUE_URL: ${construct:hosts.queueUrl}
-    timeout: 30
-    memorySize: 128
-    description: Function to check in db host to sync
-    tracing: Active
-  trigger_out:
-    handler: files_out.producer
-    events:
-      - schedule: rate(1 minute)
-    timeout: 360
+    timeout: 60
     memorySize: 512
-    vpc:
-      securityGroupIds:
-        - sg-0a13a59f4a350e705
-      subnetIds:
-        - subnet-02247b9ecf4e118fd
-    fileSystemConfig:
-      arn: arn:aws:elasticfilesystem:eu-central-1:901978288702:access-point/fsap-048f4157f6a2d5ea9
-      localMountPath: /mnt/ingest
-    description: Function to push file to remote S3 from efs.
+    description: Function to check in db host to sync
     tracing: Active
 
 

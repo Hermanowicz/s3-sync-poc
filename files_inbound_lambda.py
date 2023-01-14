@@ -26,7 +26,13 @@ def consumer(event, context):
         logger.exception(f"reading from SQS failed, with err: {message}")
 
 
-def save_file(file_id):
+def save_file(file_id: str) -> bool:
+    """
+    Lambda pulling file from remote bucket.
+
+    :param file_id:
+    :return status:
+    """
     try:
         client = boto3.client('s3',
                         config=botocore.config.Config(s3={'addressing_style': 'virtual'}),
@@ -39,11 +45,19 @@ def save_file(file_id):
                         f"{file_id}",
                         f"/mnt/ingest/{file_id}")
         logger.info(res)
+        return True
     except Exception as e:
         logger.error(f"Failed to download file, with error: {str(e)}")
+        return False
 
 
-def delete_file(file_id):
+def delete_file(file_id) -> bool:
+    """
+    Lambda removes object in remote bucket.
+
+    :param file_id:
+    :return status:
+    """
     try:
         client = boto3.client('s3',
                         config=botocore.config.Config(s3={'addressing_style': 'virtual'}),
@@ -55,6 +69,7 @@ def delete_file(file_id):
         res = client.delete_object(Bucket="s3-sync-target",
                         Key=f"{file_id}")
         logger.info(res)
+        return True
     except Exception as e:
         logger.error(f"Failed to delete file, with error: {str(e)}")
-
+        return False
